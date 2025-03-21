@@ -1,3 +1,6 @@
 #!/bin/bash
 
-g++ main.cpp meth.cpp -o em_screen -O3
+if [ ! -d "bin" ]; then
+    mkdir bin
+fi
+g++ main.cpp meth.cpp -o bin/em_screen -O3
