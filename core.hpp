@@ -6,7 +6,7 @@
 
 // Requirements
 constexpr float f = 2.71 * 1000 * 1000 * 1000; // 2.71 GHz (1/s)
-constexpr float lightspeed = 299'792'458; // [m/s]
+constexpr float lightspeed = 299792458; // [m/s]
 constexpr float lambda = lightspeed / f;
 constexpr float required_db = 13;
 constexpr float board_side = 0.5; // 50 cm
@@ -111,12 +111,9 @@ std::tuple<int,int,int> calculate_columns_and_rows(const hex_params& params) {
     int columns0 = 1 + floor(board_cap_horiz / params.v_dist);
 
     float horiz_hex_len1 = params.hole_len(params.theta1);
-    int columns1 = 0;
-    if((horiz_hex_len + params.h_dist) / 2 + columns * (horiz_hex_len1 + v_dist) > board_cap) {
-        columns1 = columns0 - 1;
-    }
-    else {
-        columns1 = columns;
+    int columns1 = columns0;
+    if((horiz_hex_len + params.h_dist) / 2 + columns0 * (horiz_hex_len1 + params.v_dist) > board_cap) {
+        columns1--;
     }
 
     float vert_hex_len0 = params.hole_len(params.theta0 + M_PI_4);
@@ -136,12 +133,38 @@ float calculate_row_attenuation(float lambda, float hole_len, int holes) {
     return S1 + S2;
 }
 
-float hole_area(const hex_params& params, const std::pair<int, int>& columns_and_rows) {
+float hole_area(const hex_params& params, const std::tuple<int, int, int>& columns_and_rows) {
+    float hex_area = params.side * params.side * M_SQRT3 / 4;
     
+    int columns_odd = std::get<0>(columns_and_rows);
+    int columns_even = std::get<1>(columns_and_rows);
+    int rows = std::get<2>(columns_and_rows);
+    
+    int hexes_row_even = std::floor((float)rows / 2) * columns_even;
+    int hexes_row_odd = std::ceil((float)rows / 2) * columns_odd;
+
+    float holes_area = hex_area * (hexes_row_even + hexes_row_odd);
+
+    return holes_area;
 }
 
 float attenuation(const hex_params& params) {
+    auto columns_and_rows = calculate_columns_and_rows(params);
+    auto columns_odd = std::get<0>(columns_and_rows);
+    auto columns_even = std::get<1>(columns_and_rows);
+    auto rows = std::get<2>(columns_and_rows);
     
+    // horizontal
+    float hex_len_horiz = params.hole_len(params.theta0);
+    float att_horiz = calculate_row_attenuation(lambda, hex_len_horiz, columns_odd);
+
+    //diagonal (oh boy...)
+    float angle = atan(2 * params.h_dist / params.v_dist);
+    float hex_len_diag = std::max(params.hole_len(params.theta0 + angle), params.hole_len(params.theta1 + angle));
+    float att_diag = calculate_row_attenuation(lambda, hex_len_diag, std::min(columns_odd, rows));
+
+    // we take worst case scenario
+    return std::min(att_horiz, att_diag);
 }
 
 float attenuation(const vector5f& params) {
