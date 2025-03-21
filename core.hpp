@@ -103,12 +103,21 @@ std::vector<hex_params> create_grid(int n) {
     return res;
 }
 
-std::pair<int, int> calculate_columns_and_rows(const hex_params& params) {
+std::tuple<int,int,int> calculate_columns_and_rows(const hex_params& params) {
     float board_cap = board_side - 2 * board_margin;
     
     float horiz_hex_len = params.hole_len(params.theta0);
     float board_cap_horiz = board_cap - horiz_hex_len;
-    int columns = 1 + floor(board_cap_horiz / params.v_dist);
+    int columns0 = 1 + floor(board_cap_horiz / params.v_dist);
+
+    float horiz_hex_len1 = params.hole_len(params.theta1);
+    int columns1 = 0;
+    if((horiz_hex_len + params.h_dist) / 2 + columns * (horiz_hex_len1 + v_dist) > board_cap) {
+        columns1 = columns0 - 1;
+    }
+    else {
+        columns1 = columns;
+    }
 
     float vert_hex_len0 = params.hole_len(params.theta0 + M_PI_4);
     float vert_hex_len1 = params.hole_len(params.theta1 + M_PI_4);
@@ -118,7 +127,7 @@ std::pair<int, int> calculate_columns_and_rows(const hex_params& params) {
     float board_cap_vert = board_cap - vert_hex_len;
     int rows = 1 + floor(board_cap_vert / params.h_dist);
 
-    return {columns, rows};
+    return {columns0, columns1, rows};
 }
 
 float calculate_row_attenuation(float lambda, float hole_len, int holes) {
