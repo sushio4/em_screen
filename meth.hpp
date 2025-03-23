@@ -28,9 +28,43 @@ struct vector5f {
         throw std::out_of_range("Invalid index for vector5f");
     }
 
+    vector5f operator*(float rhs) const {
+        vector5f v;
+        v.x = this->x * rhs;
+        v.y = this->y * rhs;
+        v.z = this->z * rhs;
+        v.w = this->w * rhs;
+        v.v = this->v * rhs;
+        return v;
+    }
+
+    vector5f operator+(const vector5f& rhs) const {
+        vector5f v;
+        v.x = this->x + rhs.x;
+        v.y = this->y + rhs.y;
+        v.z = this->z + rhs.z;
+        v.w = this->w + rhs.w;
+        v.v = this->v + rhs.v;
+        return v;
+    }
+
+    vector5f operator+=(const vector5f& rhs) {
+        *this = *this + rhs;
+        return *this;
+    }
+
+    template<typename T>
+    vector5f operator*=(T rhs) {
+        *this = *this * rhs;
+        return *this;
+    }
+
     float abs() {
         return sqrt(x*x + y*y + z*z + w*w + v*v);
     }
 };
 
-vector5f grad5f(std::function<float(vector5f)> function, const vector5f& x, const float dx = 0.01);
+vector5f operator*(float lhs, const vector5f& rhs);
+
+vector5f grad5f(std::function<float(const vector5f&)> func, const vector5f& x, const float dx = 0.01);
+
